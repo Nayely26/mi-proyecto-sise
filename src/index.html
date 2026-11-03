@@ -1,0 +1,539 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SISE | Sistema de Solicitudes Estudiantiles</title>
+  
+  <!-- CSS Principal y FontAwesome para Íconos -->
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <!-- Enlace de accesibilidad para saltar al contenido principal -->
+  <a href="#mainContent" class="skip-link">Saltar al contenido principal (Teclado)</a>
+
+  <!-- BARRA FLOTANTE DE ACCESIBILIDAD (WCAG 2.1 AA) -->
+  <div class="accessibility-bar" role="region" aria-label="Herramientas de Accesibilidad">
+    <div class="acc-info">
+      <i class="fas fa-universal-access" aria-hidden="true"></i>
+      <span>Accesibilidad WCAG 2.1 AA</span>
+    </div>
+    <div class="acc-controls">
+      <button onclick="changeFontSize(1)" aria-label="Aumentar tamaño de letra">A+</button>
+      <button onclick="changeFontSize(-1)" aria-label="Disminuir tamaño de letra">A-</button>
+      <button onclick="resetFontSize()" aria-label="Restablecer tamaño de letra">A</button>
+      <button onclick="toggleHighContrast()" aria-label="Alternar modo de alto contraste">
+        <i class="fas fa-adjust" aria-hidden="true"></i> Alto Contraste
+      </button>
+      <button onclick="toggleScreenReader()" id="srToggleBtn" aria-label="Activar o desactivar lector de voz">
+        <i class="fas fa-volume-up" aria-hidden="true"></i> Voz: OFF
+      </button>
+    </div>
+  </div>
+
+  <!-- PANTALLA 1: LOGIN (INICIO DE SESIÓN) -->
+  <div id="loginScreen" class="login-wrapper">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="brand-badge"><i class="fas fa-graduation-cap"></i></div>
+        <h1>SISE</h1>
+        <p>Sistema de Solicitudes Estudiantiles</p>
+      </div>
+
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label for="loginUser"><i class="fas fa-user"></i> Usuario institucional:</label>
+          <input type="text" id="loginUser" required placeholder="Ej: 60219476, admin, secretario" autocomplete="username">
+        </div>
+
+        <div class="form-group">
+          <label for="loginPass"><i class="fas fa-lock"></i> Contraseña:</label>
+          <input type="password" id="loginPass" required placeholder="••••••••" autocomplete="current-password">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full btn-lg">
+          <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+        </button>
+      </form>
+
+      <!-- Accesos Rápidos de Prueba para la Demostración -->
+      <div class="demo-accounts">
+        <p class="demo-title"><i class="fas fa-key"></i> Accesos Rápidos de Prueba (Demo):</p>
+        <div class="demo-grid">
+          <button type="button" onclick="quickLogin('60219476','123456')">Estudiante (Yoshira)</button>
+          <button type="button" onclick="quickLogin('sec_general','admin123')">Sec. General</button>
+          <button type="button" onclick="quickLogin('coord_ti','coord123')">Coordinador (Ing. Roberto)</button>
+          <button type="button" onclick="quickLogin('sec_academico','sec123')">Sec. Académico</button>
+          <button type="button" onclick="quickLogin('director','dir123')">Director</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANTALLA 2: DASHBOARD PRINCIPAL -->
+  <div id="appShell" class="app-shell" style="display: none;">
+    
+    <!-- BARRA LATERAL (SIDEBAR NAV) -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-avatar">S</div>
+        <div>
+          <strong class="brand-name">SISE INSTITUTO</strong>
+          <small class="brand-sub">Gestión Académica</small>
+        </div>
+      </div>
+
+      <!-- TARJETA DEL USUARIO AUTENTICADO -->
+      <div class="user-card">
+        <div class="user-avatar" id="sidebarAvatar">AD</div>
+        <div class="user-details">
+          <strong id="sidebarUserName">Cargando...</strong>
+          <span class="role-badge" id="sidebarUserRole">ROL</span>
+        </div>
+      </div>
+
+      <nav class="navigation">
+        <div class="nav-label">MENÚ DE NAVEGACIÓN</div>
+        
+        <button class="nav-link active" onclick="switchPage('solicitudes')" id="nav-solicitudes">
+          <i class="fas fa-folder-open nav-icon"></i>
+          <span>Bandeja de Solicitudes</span>
+          <span class="badge" id="solicitudesCount">0</span>
+        </button>
+
+        <button class="nav-link" onclick="switchPage('nueva')" id="nav-nueva">
+          <i class="fas fa-file-signature nav-icon"></i>
+          <span>Nueva Solicitud</span>
+        </button>
+
+        <button class="nav-link" onclick="switchPage('seguimiento')" id="nav-seguimiento">
+          <i class="fas fa-search nav-icon"></i>
+          <span>Seguimiento por DNI</span>
+        </button>
+
+        <button class="nav-link" onclick="switchPage('reclamaciones')" id="nav-reclamaciones">
+          <i class="fas fa-book-open nav-icon"></i>
+          <span>Libro de Reclamaciones</span>
+        </button>
+
+        <button class="nav-link" onclick="switchPage('usuarios')" id="nav-usuarios">
+          <i class="fas fa-users-cog nav-icon"></i>
+          <span>Gestión de Usuarios</span>
+        </button>
+
+        <button class="nav-link" onclick="switchPage('reportes')" id="nav-reportes">
+          <i class="fas fa-chart-bar nav-icon"></i>
+          <span>Reportes e Informes</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button onclick="handleLogout()" class="btn-logout">
+          <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+        </button>
+      </div>
+    </aside>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="main-content" id="mainContent" tabindex="-1">
+      
+      <!-- HEADER SUPERIOR -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <h2 id="pageTitle">Bandeja de Solicitudes</h2>
+        </div>
+        <div class="topbar-right">
+          <span class="user-chip">
+            <i class="fas fa-user-circle"></i>
+            <span id="headerUserInfo">Usuario</span>
+          </span>
+        </div>
+      </header>
+
+      <!-- VISTA 1: BANDEJA DE SOLICITUDES -->
+      <section id="page-solicitudes" class="page-section">
+        <div class="panel">
+          <div class="panel-header">
+            <h3>Expedientes Registrados</h3>
+            <button onclick="switchPage('nueva')" class="btn btn-primary">
+              <i class="fas fa-plus"></i> Nueva Solicitud
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>CÓDIGO</th>
+                  <th>ESTUDIANTE / DNI</th>
+                  <th>PROGRAMA / SEMESTRE</th>
+                  <th>TRÁMITE</th>
+                  <th>ARCHIVOS</th>
+                  <th>ESTADO</th>
+                  <th>ACCIONES</th>
+                </tr>
+              </thead>
+              <tbody id="requestsTableBody">
+                <!-- Se llena dinámicamente con JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- VISTA 2: NUEVA SOLICITUD -->
+      <section id="page-nueva" class="page-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-header">
+            <h3>Registrar Nueva Solicitud Estudiantil</h3>
+          </div>
+          
+          <form id="newRequestForm" onsubmit="handleCreateRequest(event)" class="form-grid">
+            <div class="form-group full-width">
+              <label for="reqType">Tipo de Trámite Academicas:*</label>
+              <select id="reqType" required>
+                <option value="">-- Seleccionar Trámite --</option>
+                <option value="Carta de Presentación">Carta de Presentación (A Coordinación)</option>
+                <option value="Convalidación de Asignaturas">Convalidación de Asignaturas (Coordinación -> Sec. Académico)</option>
+                <option value="Constancia de Estudios">Constancia de Estudios</option>
+                <option value="Récord Académico">Récord Académico</option>
+                <option value="Certificado de Prácticas Pre-Profesionales">Certificado de Prácticas Pre-Profesionales (Sec. General -> Director)</option>
+                <option value="Certificado de Prácticas Profesionales">Certificado de Prácticas Profesionales (Sec. General -> Director)</option>
+                <option value="Certificado Titular">Certificado Titular (Sec. General -> Director)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="reqStudentName">Nombres y Apellidos del Estudiante:*</label>
+              <input type="text" id="reqStudentName" required placeholder="Ej: Yoshira Santiago Chamorro">
+            </div>
+
+            <div class="form-group">
+              <label for="reqDni">Número de DNI / CE:*</label>
+              <input type="text" id="reqDni" required maxlength="12" placeholder="Ej: 60219476">
+            </div>
+
+            <div class="form-group">
+              <label for="reqProgram">Programa de Estudios:*</label>
+              <select id="reqProgram" required>
+                <option value="Arquitectura de Plataformas y Servicios TI">Arquitectura de Plataformas y Servicios TI</option>
+                <option value="Enfermería Técnica">Enfermería Técnica</option>
+                <option value="Fisioterapia y Rehabilitación">Fisioterapia y Rehabilitación</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="reqModule">Módulo Educativo:*</label>
+              <select id="reqModule" required>
+                <option value="I MÓDULO">I MÓDULO</option>
+                <option value="II MÓDULO">II MÓDULO</option>
+                <option value="III MÓDULO">III MÓDULO</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="reqSemester">Semestre Académico:*</label>
+              <select id="reqSemester" required>
+                <option value="I SEMESTRE">I SEMESTRE</option>
+                <option value="II SEMESTRE">II SEMESTRE</option>
+                <option value="III SEMESTRE">III SEMESTRE</option>
+                <option value="IV SEMESTRE">IV SEMESTRE</option>
+                <option value="V SEMESTRE">V SEMESTRE</option>
+                <option value="VI SEMESTRE">VI SEMESTRE</option>
+              </select>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="reqFile">Adjuntar Documento Sustentatorio (Formatos: PDF, .DOCX, .XLSX, .PPTX):*</label>
+              <input type="file" id="reqFile" accept=".pdf,.docx,.xlsx,.pptx" required>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="reqDetail">Fundamento de la Solicitud:*</label>
+              <textarea id="reqDetail" rows="3" required placeholder="Explique brevemente el motivo de su solicitud..."></textarea>
+            </div>
+
+            <div class="form-actions full-width">
+              <button type="submit" class="btn btn-primary btn-lg">
+                <i class="fas fa-paper-plane"></i> Enviar Solicitud a Secretaría General
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- VISTA 3: SEGUIMIENTO POR DNI -->
+      <section id="page-seguimiento" class="page-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-header">
+            <h3>Consulta y Seguimiento por DNI de Estudiante</h3>
+          </div>
+
+          <div class="search-box-wrap">
+            <div class="form-group inline-form">
+              <label for="searchDniInput">Ingrese DNI o Código de Solicitud:</label>
+              <div class="input-btn-group">
+                <input type="text" id="searchDniInput" placeholder="Ej: 60219476" value="60219476">
+                <button onclick="performTrackingSearch()" class="btn btn-primary">
+                  <i class="fas fa-search"></i> Consultar
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- RESULTADO DEL SEGUIMIENTO -->
+          <div id="trackingResult" class="tracking-card" style="display: none;">
+            <!-- Se renderiza por JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- VISTA 4: LIBRO DE RECLAMACIONES VIRTUAL -->
+      <section id="page-reclamaciones" class="page-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>Libro de Reclamaciones Virtual</h3>
+              <p>Conforme a la normativa institucional de atención al usuario.</p>
+            </div>
+          </div>
+
+          <div class="notice-box warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>
+              <strong>Aviso Legal:</strong> La formulación del reclamo o queja no impide acudir a otras vías de solución de controversias ni es requisito previo para interponer una denuncia ante las autoridades competentes.
+            </div>
+          </div>
+
+          <form id="complaintForm" onsubmit="handleCreateComplaint(event)" class="form-grid">
+            <div class="form-group">
+              <label for="compName">Nombre Completo:*</label>
+              <input type="text" id="compName" required placeholder="Nombres y apellidos completos">
+            </div>
+
+            <div class="form-group">
+              <label for="compDni">DNI / Carnet de Extranjería:*</label>
+              <input type="text" id="compDni" required placeholder="Número de documento">
+            </div>
+
+            <div class="form-group">
+              <label for="compEmail">Correo Electrónico:*</label>
+              <input type="email" id="compEmail" required placeholder="correo@ejemplo.com">
+            </div>
+
+            <div class="form-group">
+              <label for="compPhone">Teléfono / Celular:*</label>
+              <input type="tel" id="compPhone" required placeholder="987654321">
+            </div>
+
+            <div class="form-group">
+              <label for="compType">Tipo de Incidencia:*</label>
+              <select id="compType" required>
+                <option value="RECLAMO">RECLAMO (Disconformidad con un servicio)</option>
+                <option value="QUEJA">QUEJA (Malestar o mala atención)</option>
+              </select>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="compDetail">Detalle del Reclamo o Queja:*</label>
+              <textarea id="compDetail" rows="4" required placeholder="Escriba detalladamente los hechos ocurridos..."></textarea>
+            </div>
+
+            <div class="form-actions full-width">
+              <button type="submit" class="btn btn-primary btn-lg">
+                <i class="fas fa-file-export"></i> Registrar Hoja de Reclamación
+              </button>
+            </div>
+          </form>
+
+          <!-- REGISTRO DE RECLAMOS (ADMIN) -->
+          <div class="complaints-list-wrap">
+            <h4 class="sub-title">Hojas de Reclamaciones Registradas:</h4>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>CÓDIGO</th>
+                    <th>FECHA</th>
+                    <th>USUARIO / DNI</th>
+                    <th>TIPO</th>
+                    <th>ESTADO</th>
+                  </tr>
+                </thead>
+                <tbody id="complaintsTableBody">
+                  <!-- JS Fill -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VISTA 5: GESTIÓN DE USUARIOS (SECRETARIO ACADÉMICO) -->
+      <section id="page-usuarios" class="page-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-header">
+            <h3>Gestión de Usuarios y Credenciales Institucionales</h3>
+            <span class="role-badge badge-sec">Solo Secretario Académico</span>
+          </div>
+
+          <div id="userMgmtNotice" class="notice-box info" style="display:none;">
+            <i class="fas fa-info-circle"></i>
+            <span>Usted tiene permisos para crear usuarios y asignar usuario/contraseña a estudiantes y personal.</span>
+          </div>
+
+          <form id="createUserForm" onsubmit="handleCreateUser(event)" class="form-grid">
+            <div class="form-group">
+              <label for="newUsername">Usuario (DNI o Código):*</label>
+              <input type="text" id="newUsername" required placeholder="Ej: 71234567">
+            </div>
+
+            <div class="form-group">
+              <label for="newUserPass">Contraseña:*</label>
+              <input type="text" id="newUserPass" required placeholder="Asignar contraseña">
+            </div>
+
+            <div class="form-group">
+              <label for="newFullName">Nombre Completo:*</label>
+              <input type="text" id="newFullName" required placeholder="Ej: Juan Pérez Ramos">
+            </div>
+
+            <div class="form-group">
+              <label for="newUserRole">Rol Asignado:*</label>
+              <select id="newUserRole" required>
+                <option value="ESTUDIANTE">ESTUDIANTE / EGRESADO</option>
+                <option value="COORDINADOR">COORDINADOR DE CARRERA</option>
+                <option value="SECRETARIA">SECRETARÍA GENERAL</option>
+                <option value="SECRETARIO_ACADEMICO">SECRETARIO ACADÉMICO</option>
+                <option value="DIRECTOR">DIRECTOR INSTITUCIONAL</option>
+              </select>
+            </div>
+
+            <div class="form-actions full-width">
+              <button type="submit" class="btn btn-primary" id="btnCreateUser">
+                <i class="fas fa-user-plus"></i> Registrar Usuario y Credenciales
+              </button>
+            </div>
+          </form>
+
+          <h4 class="sub-title mt-4">Padrón de Usuarios del Sistema</h4>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>USUARIO</th>
+                  <th>NOMBRE COMPLETO</th>
+                  <th>ROL</th>
+                  <th>CONTRASEÑA</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody">
+                <!-- JS fill -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- VISTA 6: REPORTES E INFORMES EN PDF -->
+      <section id="page-reportes" class="page-section" style="display:none;">
+        <div class="panel">
+          <div class="panel-header">
+            <h3>Generación de Reportes e Informes Institucionales</h3>
+            <button onclick="window.print()" class="btn btn-primary">
+              <i class="fas fa-file-pdf"></i> Descargar Reporte (PDF / Imprimir)
+            </button>
+          </div>
+
+          <div class="report-stats-grid">
+            <div class="stat-card">
+              <i class="fas fa-file-alt stat-icon"></i>
+              <div>
+                <strong id="statTotal">0</strong>
+                <small>Total de Solicitudes</small>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <i class="fas fa-check-circle stat-icon green"></i>
+              <div>
+                <strong id="statApproved">0</strong>
+                <small>Aprobadas / Atendidas</small>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <i class="fas fa-clock stat-icon orange"></i>
+              <div>
+                <strong id="statPending">0</strong>
+                <small>En Tramitación</small>
+              </div>
+            </div>
+          </div>
+
+          <h4 class="sub-title mt-4">Resumen Institucional de Expedientes:</h4>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>CÓDIGO</th>
+                  <th>ESTUDIANTE</th>
+                  <th>DNI</th>
+                  <th>TRÁMITE</th>
+                  <th>ESTADO ACTUAL</th>
+                </tr>
+              </thead>
+              <tbody id="reportTableBody">
+                <!-- JS Fill -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL DE VISUALIZACIÓN DE ARCHIVOS Y DERIVACIÓN -->
+  <div id="fileModal" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modalTitle"><i class="fas fa-file-alt"></i> Visor de Documento y Derivación</h3>
+        <button onclick="closeModal()" class="modal-close" aria-label="Cerrar modal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div id="documentViewerBox" class="document-viewer">
+          <!-- Vista previa simulada por JS -->
+        </div>
+
+        <!-- FORMULARIO DE DERIVACIÓN (PARA SECRETARÍA Y COORDINADORES) -->
+        <div id="routingWorkflowBox" class="workflow-box mt-3">
+          <h4><i class="fas fa-route"></i> Derivar o Resolver Expediente:</h4>
+          <div class="form-group">
+            <label for="routeTargetSelect">Seleccionar Destino de Derivación:</label>
+            <select id="routeTargetSelect">
+              <option value="COORDINACION">Coordinación de Carrera</option>
+              <option value="SECRETARIO_ACADEMICO">Secretario Académico</option>
+              <option value="DIRECTOR">Director Institucional</option>
+              <option value="ENTREGADO">Aprobado / Entregado al Estudiante</option>
+            </select>
+          </div>
+          <button onclick="applyWorkflowRouting()" class="btn btn-primary btn-full">
+            <i class="fas fa-share"></i> Confirmar Derivación / Cambio de Estado
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICACIÓN ACCESIBLE -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- JS Principal -->
+  <script src="app.js"></script>
+</body>
+</html>
